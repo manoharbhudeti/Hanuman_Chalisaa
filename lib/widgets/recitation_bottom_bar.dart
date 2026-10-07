@@ -174,7 +174,7 @@ class RecitationBottomBar extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  recitation.audioMode.shortLabel,
+                                  'Auto-Scroll',
                                   style: GoogleFonts.outfit(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,

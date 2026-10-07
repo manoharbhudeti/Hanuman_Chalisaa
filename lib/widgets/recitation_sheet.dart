@@ -78,7 +78,7 @@ class RecitationSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'पाठ एवं स्वाध्याय',
+                            'स्वाध्याय एवं स्वतः-स्क्रोल',
                             style: GoogleFonts.rozhaOne(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -86,7 +86,7 @@ class RecitationSheet extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Guided Audio & Auto-Scroll • పారాయణం',
+                            'Guided Reading & Auto-Scroll • పారాయణం',
                             style: GoogleFonts.outfit(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -103,67 +103,6 @@ class RecitationSheet extends StatelessWidget {
                   ),
                 ],
               ),
-
-              const SizedBox(height: 16),
-
-              // Audio Mode Segmented Selector
-              SegmentedButton<AudioMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: AudioMode.traditionalChant,
-                    icon: Icon(Icons.graphic_eq_rounded, size: 16),
-                    label: Text('Chant Audio'),
-                  ),
-                  ButtonSegment(
-                    value: AudioMode.meditativeTanpura,
-                    icon: Icon(Icons.spa_rounded, size: 16),
-                    label: Text('Tanpura'),
-                  ),
-                  ButtonSegment(
-                    value: AudioMode.silentGuided,
-                    icon: Icon(Icons.auto_stories_rounded, size: 16),
-                    label: Text('Silent'),
-                  ),
-                ],
-                selected: {recitation.audioMode},
-                onSelectionChanged: (Set<AudioMode> selection) {
-                  recitation.setAudioMode(selection.first);
-                },
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
-              ),
-
-              if (recitation.hasError) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline_rounded,
-                          color: Colors.amber, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          recitation.errorMessage,
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            color: isDark ? Colors.white70 : Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
 
               const SizedBox(height: 18),
 
