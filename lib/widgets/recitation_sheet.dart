@@ -356,28 +356,25 @@ class RecitationSheet extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [0.75, 1.0, 1.25, 1.5].map((speed) {
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [0.75, 1.0, 1.25, 1.5, 2.0, 3.0].map((speed) {
                   final isSelected = recitation.playbackSpeed == speed;
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: ChoiceChip(
-                        label: Text('${speed}x'),
-                        selected: isSelected,
-                        selectedColor: primary.withValues(alpha: 0.25),
-                        labelStyle: GoogleFonts.outfit(
-                          fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          color: isSelected
-                              ? primary
-                              : (isDark ? Colors.white70 : Colors.black87),
-                        ),
-                        onSelected: (val) {
-                          if (val) recitation.setPlaybackSpeed(speed);
-                        },
-                      ),
+                  return ChoiceChip(
+                    label: Text('${speed}x'),
+                    selected: isSelected,
+                    selectedColor: primary.withValues(alpha: 0.25),
+                    labelStyle: GoogleFonts.outfit(
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected
+                          ? primary
+                          : (isDark ? Colors.white70 : Colors.black87),
                     ),
+                    onSelected: (val) {
+                      if (val) recitation.setPlaybackSpeed(speed);
+                    },
                   );
                 }).toList(),
               ),

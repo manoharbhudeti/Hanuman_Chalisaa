@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/reading_settings_provider.dart';
 
 class FontSizeSheet extends StatelessWidget {
@@ -259,7 +260,87 @@ class FontSizeSheet extends StatelessWidget {
                 value: settings.showQuickMeaning,
                 onChanged: (_) => settings.toggleQuickMeaning(),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              // Developer & Organization Card
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF14101A)
+                      : const Color(0xFFFFF8E1).withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: primary.withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.corporate_fare_rounded,
+                            size: 16, color: primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          'EKAME technologies',
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'developer : manohar bhudeti',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    InkWell(
+                      onTap: () async {
+                        final uri = Uri.parse('https://www.linkedin.com/in/manoharbhudeti/');
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.link_rounded,
+                            size: 14,
+                            color: Color(0xFF0A66C2),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'https://www.linkedin.com/in/manoharbhudeti/',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF0A66C2),
+                                decoration: TextDecoration.underline,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.open_in_new_rounded,
+                            size: 12,
+                            color: Color(0xFF0A66C2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
             ],
           ),
         ),

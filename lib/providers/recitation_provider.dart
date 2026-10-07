@@ -37,7 +37,7 @@ class RecitationProvider extends ChangeNotifier {
   bool get isLoading => false;
 
   int get secondsPerVerse =>
-      (baseSecondsPerVerse / _playbackSpeed).round().clamp(4, 30);
+      (baseSecondsPerVerse / _playbackSpeed).round().clamp(3, 30);
 
   double get progressFraction {
     if (_duration.inSeconds <= 0) return 0.0;
@@ -121,6 +121,10 @@ class RecitationProvider extends ChangeNotifier {
       setPlaybackSpeed(1.25);
     } else if (_playbackSpeed == 1.25) {
       setPlaybackSpeed(1.5);
+    } else if (_playbackSpeed == 1.5) {
+      setPlaybackSpeed(2.0);
+    } else if (_playbackSpeed == 2.0) {
+      setPlaybackSpeed(3.0);
     } else {
       setPlaybackSpeed(0.75);
     }

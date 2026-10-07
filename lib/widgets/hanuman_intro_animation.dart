@@ -174,9 +174,7 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = theme.primaryColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -204,16 +202,16 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
                 vertical: isWideScreen ? 16 : 8,
               ),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF14101A) : const Color(0xFFFFFDF8),
+                color: isDark ? const Color(0xFF14101A) : const Color(0xFF0F0B14),
                 borderRadius: BorderRadius.circular(26),
                 border: Border.all(
-                  color: const Color(0xFFFFB300).withValues(alpha: 0.45),
+                  color: const Color(0xFFFFB300).withValues(alpha: 0.5),
                   width: 1.8,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFF8F00).withValues(alpha: isDark ? 0.35 : 0.22),
-                    blurRadius: 28,
+                    color: const Color(0xFFFF8F00).withValues(alpha: isDark ? 0.4 : 0.28),
+                    blurRadius: 32,
                     spreadRadius: 2,
                     offset: const Offset(0, 8),
                   ),
@@ -222,32 +220,22 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
               clipBehavior: Clip.antiAlias,
               child: Stack(
                 children: [
-                  // Video & Backdrop Viewport
+                  // Full Immersive Video Viewport (No bulky bottom panel)
                   Positioned.fill(
-                    child: Column(
-                      children: [
-                        // Main Video Display Area
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: _togglePlayPause,
-                            behavior: HitTestBehavior.opaque,
-                            child: Container(
-                              color: Colors.black,
-                              alignment: Alignment.center,
-                              child: _buildVideoContent(videoAspect, primaryColor),
-                            ),
-                          ),
-                        ),
-
-                        // Bottom Actions Area matching the video aesthetic
-                        _buildBottomActionPanel(primaryColor, isDark),
-                      ],
+                    child: GestureDetector(
+                      onTap: _togglePlayPause,
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        color: Colors.black,
+                        alignment: Alignment.center,
+                        child: _buildVideoContent(videoAspect),
+                      ),
                     ),
                   ),
 
-                  // Top Header Overlay: Title & Controls
+                  // Top Header Overlay: Sacred Badge & Quick Controls
                   Positioned(
-                    top: 12,
+                    top: 14,
                     left: 14,
                     right: 14,
                     child: Row(
@@ -283,10 +271,22 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
                           ),
                         ),
 
-                        // Quick Controls: Mute & Close
+                        // Controls: Replay, Mute & Close
                         Row(
                           children: [
-                            if (_isInitialized)
+                            if (_isInitialized) ...[
+                              IconButton(
+                                icon: const Icon(Icons.replay_rounded,
+                                    color: Colors.white, size: 20),
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      Colors.black.withValues(alpha: 0.6),
+                                  padding: const EdgeInsets.all(8),
+                                ),
+                                tooltip: 'Replay Video',
+                                onPressed: _replayVideo,
+                              ),
+                              const SizedBox(width: 8),
                               IconButton(
                                 icon: Icon(
                                   _isMuted
@@ -303,6 +303,7 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
                                 tooltip: _isMuted ? 'Unmute' : 'Mute',
                                 onPressed: _toggleMute,
                               ),
+                            ],
                             if (widget.showCloseButton) ...[
                               const SizedBox(width: 8),
                               IconButton(
@@ -323,6 +324,76 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
                       ],
                     ),
                   ),
+
+                  // Floating Pop-up Hero "Begin Sacred Journey" Button (Bottom bar suppressed)
+                  Positioned(
+                    bottom: 24,
+                    left: 20,
+                    right: 20,
+                    child: Center(
+                      child: ScaleTransition(
+                        scale: _buttonScaleAnimation,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFFFF8F00),
+                                Color(0xFFFF5722),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF6F00).withValues(alpha: 0.6),
+                                blurRadius: 20,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              HapticFeedback.heavyImpact();
+                              widget.onBeginJourney();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 26, vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                            ),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'BEGIN SACRED JOURNEY',
+                                    style: GoogleFonts.cinzel(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.8,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.arrow_forward_rounded,
+                                      size: 21, color: Colors.white),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -332,7 +403,7 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
     );
   }
 
-  Widget _buildVideoContent(double videoAspect, Color primaryColor) {
+  Widget _buildVideoContent(double videoAspect) {
     if (_hasError) {
       return Center(
         child: Padding(
@@ -417,10 +488,10 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
             ),
           ),
 
-        // Tap to unmute hint pill
+        // Floating Tap to Unmute Chip (over video, above button)
         if (_isMuted && _videoController.value.isPlaying)
           Positioned(
-            bottom: 24,
+            bottom: 84,
             child: GestureDetector(
               onTap: _toggleMute,
               child: Container(
@@ -431,9 +502,9 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
                   border: Border.all(
                     color: const Color(0xFFFFB300).withValues(alpha: 0.6),
                   ),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
+                      color: Colors.black54,
                       blurRadius: 8,
                     ),
                   ],
@@ -471,144 +542,10 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
               bufferedColor: Colors.white.withValues(alpha: 0.3),
               backgroundColor: Colors.white.withValues(alpha: 0.1),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 2),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildBottomActionPanel(Color primaryColor, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1B1624) : const Color(0xFFFFFDF9),
-        border: Border(
-          top: BorderSide(
-            color: const Color(0xFFFFB300).withValues(alpha: 0.25),
-            width: 1.0,
-          ),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Subtitle info line
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '॥ संकट कटे मिटे सब पीरा ॥',
-                  style: GoogleFonts.notoSansDevanagari(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFFFF9800),
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '• Sacred Recitation',
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    color: isDark ? Colors.white60 : Colors.black54,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Action Buttons: Replay + Prominent "Begin Sacred Journey" Button
-          Row(
-            children: [
-              // Replay button if video ended or playing
-              if (_isInitialized) ...[
-                IconButton.filledTonal(
-                  onPressed: _replayVideo,
-                  icon: const Icon(Icons.replay_rounded, size: 22),
-                  tooltip: 'Replay Video',
-                  style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFB300).withValues(alpha: 0.15),
-                    foregroundColor: const Color(0xFFFFB300),
-                    padding: const EdgeInsets.all(14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-              ],
-
-              // Main "Begin Journey" Dynamic Button
-              Expanded(
-                child: ScaleTransition(
-                  scale: _isVideoEnded ? _buttonScaleAnimation : const AlwaysStoppedAnimation(1.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFFF8F00),
-                          Color(0xFFFF5722),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF6F00).withValues(alpha: 0.4),
-                          blurRadius: 14,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        HapticFeedback.heavyImpact();
-                        widget.onBeginJourney();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Begin Sacred Journey',
-                              style: GoogleFonts.cinzel(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.4,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const Icon(Icons.arrow_forward_rounded,
-                                size: 20, color: Colors.white),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
