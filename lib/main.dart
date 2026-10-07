@@ -6,10 +6,12 @@ import 'providers/recitation_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/onboarding_animation_screen.dart';
 import 'services/chalisa_service.dart';
+import 'services/web_video_registrar.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerWebVideoPlugin();
   final chalisaService = ChalisaService();
 
   runApp(

@@ -22,6 +22,11 @@ const MIME_TYPES = {
   '.otf': 'font/otf',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.ogg': 'video/ogg',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
 };
 
 const server = http.createServer((req, res) => {
@@ -33,26 +38,64 @@ const server = http.createServer((req, res) => {
   let sanitizedUrl = req.url.split('?')[0];
   if (sanitizedUrl === '/') sanitizedUrl = '/index.html';
 
-  let filePath = path.join(WEB_DIR, decodeURIComponent(sanitizedUrl));
+  let relativePath = decodeURIComponent(sanitizedUrl);
+  let filePath = path.join(WEB_DIR, relativePath);
+
+  // Check asset aliasing for videos
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+    // If requested /assets/videos/hanuman_intro.mp4, check assets/assets/videos
+    const alt1 = path.join(WEB_DIR, 'assets', relativePath);
+    const alt2 = path.join(WEB_DIR, 'assets', 'assets', 'videos', path.basename(relativePath));
+    const alt3 = path.join(WEB_DIR, 'assets', 'videos', path.basename(relativePath));
+    if (fs.existsSync(alt1) && fs.statSync(alt1).isFile()) {
+      filePath = alt1;
+    } else if (fs.existsSync(alt2) && fs.statSync(alt2).isFile()) {
+      filePath = alt2;
+    } else if (fs.existsSync(alt3) && fs.statSync(alt3).isFile()) {
+      filePath = alt3;
+    } else if (!path.extname(sanitizedUrl)) {
+      filePath = path.join(WEB_DIR, 'index.html');
+    }
+  }
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
-      // SPA Fallback to index.html
+      // Fallback to index.html for SPA routes, but return 404 for missing media/files
+      if (path.extname(filePath)) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Not Found');
+        return;
+      }
       filePath = path.join(WEB_DIR, 'index.html');
     }
 
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
-    fs.readFile(filePath, (readErr, content) => {
-      if (readErr) {
-        res.writeHead(500);
-        res.end(`Server Error: ${readErr.code}`);
-        return;
-      }
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content);
-    });
+    // Support HTTP Range requests (required for HTML5 MP4 video playback in browsers)
+    const range = req.headers.range;
+    if (range && stats) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
+      const chunksize = end - start + 1;
+      const stream = fs.createReadStream(filePath, { start, end });
+
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${stats.size}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': contentType,
+      });
+      stream.pipe(res);
+    } else {
+      res.writeHead(200, {
+        'Content-Length': stats ? stats.size : undefined,
+        'Content-Type': contentType,
+        'Accept-Ranges': 'bytes',
+      });
+      fs.createReadStream(filePath).pipe(res);
+    }
   });
 });
 

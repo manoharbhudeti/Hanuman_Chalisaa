@@ -25,7 +25,7 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
   late VideoPlayerController _videoController;
   bool _isInitialized = false;
   bool _hasError = false;
-  bool _isMuted = false;
+  bool _isMuted = true;
   bool _isVideoEnded = false;
 
   late final AnimationController _pulseController;
@@ -49,12 +49,37 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
 
   Future<void> _initVideo() async {
     try {
-      _videoController =
-          VideoPlayerController.asset('assets/videos/hanuman_intro.mp4');
+      // Strategy 1: Asset controller
+      bool initialized = false;
+      try {
+        _videoController =
+            VideoPlayerController.asset('assets/videos/hanuman_intro.mp4');
+        await _videoController.initialize();
+        initialized = true;
+      } catch (assetErr) {
+        debugPrint('Asset controller initialization failed: $assetErr');
+      }
 
-      await _videoController.initialize();
+      // Strategy 2: Relative web URL fallback if asset init failed
+      if (!initialized) {
+        try {
+          final uri = Uri.base.resolve('assets/videos/hanuman_intro.mp4');
+          _videoController = VideoPlayerController.networkUrl(uri);
+          await _videoController.initialize();
+          initialized = true;
+        } catch (netErr) {
+          debugPrint('Network controller fallback failed: $netErr');
+        }
+      }
+
+      if (!initialized) {
+        throw Exception('All video controller initialization strategies failed');
+      }
+
       _videoController.setLooping(false);
-      _videoController.setVolume(1.0);
+      // Volume 0.0 is required so browsers allow automatic autoplay without gesture requirement
+      await _videoController.setVolume(0.0);
+      _isMuted = true;
 
       _videoController.addListener(() {
         if (!mounted) return;
@@ -74,11 +99,13 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
         }
       });
 
+      // Play by default immediately upon load
       await _videoController.play();
 
       if (mounted) {
         setState(() {
           _isInitialized = true;
+          _hasError = false;
         });
       }
     } catch (e) {
@@ -94,6 +121,14 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
   void _togglePlayPause() {
     if (!_isInitialized) return;
     HapticFeedback.selectionClick();
+    if (_isMuted) {
+      // Unmute on first user interaction so audio plays
+      _videoController.setVolume(1.0);
+      setState(() {
+        _isMuted = false;
+      });
+      return;
+    }
     setState(() {
       if (_videoController.value.isPlaying) {
         _videoController.pause();
@@ -379,6 +414,47 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
               Icons.play_arrow_rounded,
               color: Colors.white,
               size: 42,
+            ),
+          ),
+
+        // Tap to unmute hint pill
+        if (_isMuted && _videoController.value.isPlaying)
+          Positioned(
+            bottom: 24,
+            child: GestureDetector(
+              onTap: _toggleMute,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFFFFB300).withValues(alpha: 0.6),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.volume_off_rounded,
+                        color: Color(0xFFFFB300), size: 15),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Tap for Audio / ఆడియో ఆన్ చేయండి',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
 
