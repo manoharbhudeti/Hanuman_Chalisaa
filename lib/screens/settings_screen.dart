@@ -310,13 +310,13 @@ class SettingsScreen extends StatelessWidget {
             children: [
               // Organization Row
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 50,
-                      height: 50,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -329,17 +329,17 @@ class SettingsScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: primary.withValues(alpha: 0.35),
-                            blurRadius: 10,
+                            color: primary.withValues(alpha: 0.3),
+                            blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
                         ],
                       ),
                       child: const Center(
                         child: Icon(
-                          Icons.business_rounded,
+                          Icons.corporate_fare_rounded,
                           color: Colors.white,
-                          size: 26,
+                          size: 24,
                         ),
                       ),
                     ),
@@ -348,51 +348,31 @@ class SettingsScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Text(
-                                'ORGANIZATION',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.8,
-                                  color: isDark ? const Color(0xFFFFB300) : primary,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: primary.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'OFFICIAL',
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: primary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 3),
                           Text(
-                            'EKAME technologies',
+                            'ORGANIZATION',
                             style: GoogleFonts.outfit(
-                              fontSize: 18,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                              color: isDark ? const Color(0xFFFFB300) : primary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'EKAME Technologies',
+                            style: GoogleFonts.outfit(
+                              fontSize: 17,
                               fontWeight: FontWeight.bold,
                               color: isDark ? Colors.white : Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Next-generation spiritual and technology solutions',
+                            'Solutions for Simple Life',
                             style: GoogleFonts.outfit(
                               fontSize: 12,
-                              color: isDark ? Colors.white60 : Colors.black54,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? const Color(0xFFFFCA28) : const Color(0xFFE65100),
                             ),
                           ),
                         ],
@@ -404,18 +384,23 @@ class SettingsScreen extends StatelessWidget {
 
               const Divider(height: 1),
 
-              // Developer Row with LinkedIn Hyperlink
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              // Developer Row (Clicking directly opens LinkedIn profile)
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _openUrl(
+                    'https://www.linkedin.com/in/manoharbhudeti/',
+                    context,
+                  ),
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
-                          width: 50,
-                          height: 50,
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [
@@ -428,15 +413,15 @@ class SettingsScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0A66C2).withValues(alpha: 0.35),
-                                blurRadius: 10,
+                                color: const Color(0xFF0A66C2).withValues(alpha: 0.3),
+                                blurRadius: 8,
                                 offset: const Offset(0, 3),
                               ),
                             ],
                           ),
                           child: const Center(
                             child: Icon(
-                              Icons.badge_rounded,
+                              Icons.person_rounded,
                               color: Colors.white,
                               size: 26,
                             ),
@@ -456,21 +441,60 @@ class SettingsScreen extends StatelessWidget {
                                   color: const Color(0xFF0A66C2),
                                 ),
                               ),
-                              const SizedBox(height: 3),
-                              Text(
-                                'developer : manohar bhudeti',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                ),
-                              ),
                               const SizedBox(height: 2),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      'developer : manohar bhudeti',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? const Color(0xFF90CAF9)
+                                            : const Color(0xFF0A66C2),
+                                        decoration: TextDecoration.underline,
+                                        decorationColor: const Color(0xFF0A66C2),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Icon(
+                                    Icons.open_in_new_rounded,
+                                    size: 15,
+                                    color: Color(0xFF0A66C2),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A66C2).withValues(alpha: isDark ? 0.25 : 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFF0A66C2).withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.link_rounded,
+                                size: 13,
+                                color: Color(0xFF0A66C2),
+                              ),
+                              const SizedBox(width: 4),
                               Text(
-                                'Creator & Lead Software Engineer',
+                                'LinkedIn',
                                 style: GoogleFonts.outfit(
-                                  fontSize: 12,
-                                  color: isDark ? Colors.white60 : Colors.black54,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF0A66C2),
                                 ),
                               ),
                             ],
@@ -478,83 +502,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-
-                    // Clickable LinkedIn Hyperlink Card
-                    Material(
-                      color: const Color(0xFF0A66C2).withValues(alpha: isDark ? 0.22 : 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        onTap: () => _openUrl(
-                          'https://www.linkedin.com/in/manoharbhudeti/',
-                          context,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF0A66C2).withValues(alpha: 0.4),
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0A66C2),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Icon(
-                                  Icons.open_in_browser_rounded,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'LinkedIn Profile • Hyperlink',
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF0A66C2),
-                                      ),
-                                    ),
-                                    Text(
-                                      'https://www.linkedin.com/in/manoharbhudeti/',
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: isDark
-                                            ? const Color(0xFF70B5F9)
-                                            : const Color(0xFF0A66C2),
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Icon(
-                                Icons.open_in_new_rounded,
-                                size: 18,
-                                color: Color(0xFF0A66C2),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ],
@@ -602,12 +550,21 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Developed by Manohar Bhudeti • EKAME technologies',
+                  'Developer : manohar bhudeti • EKAME Technologies',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: primary,
+                  ),
+                ),
+                Text(
+                  'Solutions for Simple Life',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                    color: isDark ? const Color(0xFFFFCA28) : const Color(0xFFE65100),
                   ),
                 ),
                 const SizedBox(height: 8),

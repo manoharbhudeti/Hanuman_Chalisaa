@@ -283,7 +283,7 @@ class FontSizeSheet extends StatelessWidget {
                             size: 16, color: primary),
                         const SizedBox(width: 6),
                         Text(
-                          'EKAME technologies',
+                          'EKAME Technologies',
                           style: GoogleFonts.outfit(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -292,49 +292,54 @@ class FontSizeSheet extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'developer : manohar bhudeti',
-                      style: GoogleFonts.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white70 : Colors.black87,
+                    Padding(
+                      padding: const EdgeInsets.only(left: 22, top: 1),
+                      child: Text(
+                        'Solutions for Simple Life',
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFFFFCA28) : const Color(0xFFE65100),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     InkWell(
                       onTap: () async {
                         final uri = Uri.parse('https://www.linkedin.com/in/manoharbhudeti/');
                         await launchUrl(uri, mode: LaunchMode.externalApplication);
                       },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.link_rounded,
-                            size: 14,
-                            color: Color(0xFF0A66C2),
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              'https://www.linkedin.com/in/manoharbhudeti/',
-                              style: GoogleFonts.outfit(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF0A66C2),
-                                decoration: TextDecoration.underline,
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.person_rounded,
+                              size: 15,
+                              color: Color(0xFF0A66C2),
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.open_in_new_rounded,
-                            size: 12,
-                            color: Color(0xFF0A66C2),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                'Developer : manohar bhudeti',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF0A66C2),
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.open_in_new_rounded,
+                              size: 13,
+                              color: Color(0xFF0A66C2),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
