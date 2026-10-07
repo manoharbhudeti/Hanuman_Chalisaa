@@ -64,10 +64,11 @@ class CompletionDialog extends StatelessWidget {
             // Blessings Title
             Text(
               '॥ जय श्री राम ॥',
-              style: GoogleFonts.rozhaOne(
+              style: GoogleFonts.notoSansDevanagari(
                 fontSize: 22,
                 color: primary,
                 fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
               ),
             ),
             const SizedBox(height: 4),

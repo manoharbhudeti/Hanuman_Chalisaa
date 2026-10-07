@@ -130,8 +130,8 @@ class CounterScreen extends StatelessWidget {
           children: [
             Text(
               'जाप एवं पाठ ट्रैकर',
-              style: GoogleFonts.rozhaOne(
-                fontSize: 19,
+              style: GoogleFonts.notoSansDevanagari(
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: primary,
               ),
@@ -293,8 +293,9 @@ class CounterScreen extends StatelessWidget {
                       children: [
                         Text(
                           '॥ ॐ ॥',
-                          style: GoogleFonts.rozhaOne(
+                          style: GoogleFonts.notoSansDevanagari(
                             fontSize: 18,
+                            fontWeight: FontWeight.bold,
                             color: primary,
                           ),
                         ),

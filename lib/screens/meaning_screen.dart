@@ -43,8 +43,8 @@ class _MeaningScreenState extends State<MeaningScreen> {
           children: [
             Text(
               'अर्थ एवं भावार्थ',
-              style: GoogleFonts.rozhaOne(
-                fontSize: 19,
+              style: GoogleFonts.notoSansDevanagari(
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: primary,
               ),
@@ -329,13 +329,14 @@ class _MeaningCardState extends State<_MeaningCard> {
                   // Devanagari Script
                   Text(
                     v.awadhi,
-                    style: GoogleFonts.rozhaOne(
-                      fontSize: 17,
+                    style: GoogleFonts.notoSansDevanagari(
+                      fontSize: 16.5,
                       fontWeight: FontWeight.w600,
                       color: isDark
                           ? const Color(0xFFFFF8E7)
                           : const Color(0xFF3E2723),
-                      height: 1.5,
+                      height: 1.6,
+                      letterSpacing: 0.25,
                     ),
                   ),
                   const SizedBox(height: 8),

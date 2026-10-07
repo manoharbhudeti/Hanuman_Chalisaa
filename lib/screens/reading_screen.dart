@@ -64,10 +64,20 @@ class _ReadingScreenState extends State<ReadingScreen> {
     if (key?.currentContext != null) {
       Scrollable.ensureVisible(
         key!.currentContext!,
-        duration: const Duration(milliseconds: 600),
+        duration: const Duration(milliseconds: 650),
         curve: Curves.easeInOutCubic,
-        alignment: 0.15,
+        alignment: 0.12,
       );
+    } else {
+      if (_scrollController.hasClients) {
+        final maxScroll = _scrollController.position.maxScrollExtent;
+        final targetOffset = (index / 43.0) * maxScroll;
+        _scrollController.animateTo(
+          targetOffset,
+          duration: const Duration(milliseconds: 650),
+          curve: Curves.easeInOutCubic,
+        );
+      }
     }
   }
 
@@ -165,10 +175,11 @@ class _ReadingScreenState extends State<ReadingScreen> {
           children: [
             Text(
               'श्री हनुमान चालीसा',
-              style: GoogleFonts.rozhaOne(
-                fontSize: 19,
+              style: GoogleFonts.notoSansDevanagari(
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: primary,
+                letterSpacing: 0.3,
               ),
             ),
             Text(
@@ -256,8 +267,15 @@ class _ReadingScreenState extends State<ReadingScreen> {
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.only(bottom: 24),
             children: [
-              // Top Quick Bar & Invocation Card
-              _buildTopInvocationCard(context, isDark, primary, settings, counter),
+              // Top Quick Bar & Auto-Scroll Session Invocation Card
+              _buildTopInvocationCard(
+                context,
+                isDark,
+                primary,
+                settings,
+                counter,
+                recitation,
+              ),
 
               // Section 1: Opening Dohas
               _buildSectionHeader(
@@ -274,6 +292,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
                     key: _verseKeys.putIfAbsent(index, () => GlobalKey()),
                     verse: verse,
                     languageMode: settings.languageMode,
+                    meaningLanguageMode: settings.meaningLanguageMode,
+                    devanagariFontStyle: settings.devanagariFontStyle,
                     fontSize: settings.fontSize,
                     showTransliteration: settings.showTransliteration,
                     showQuickMeaning: settings.showQuickMeaning,
@@ -303,6 +323,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
                     key: _verseKeys.putIfAbsent(index, () => GlobalKey()),
                     verse: verse,
                     languageMode: settings.languageMode,
+                    meaningLanguageMode: settings.meaningLanguageMode,
+                    devanagariFontStyle: settings.devanagariFontStyle,
                     fontSize: settings.fontSize,
                     showTransliteration: settings.showTransliteration,
                     showQuickMeaning: settings.showQuickMeaning,
@@ -332,6 +354,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
                     key: _verseKeys.putIfAbsent(index, () => GlobalKey()),
                     verse: verse,
                     languageMode: settings.languageMode,
+                    meaningLanguageMode: settings.meaningLanguageMode,
+                    devanagariFontStyle: settings.devanagariFontStyle,
                     fontSize: settings.fontSize,
                     showTransliteration: settings.showTransliteration,
                     showQuickMeaning: settings.showQuickMeaning,
@@ -361,6 +385,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
     Color primary,
     ReadingSettingsProvider settings,
     CounterProvider counter,
+    RecitationProvider recitation,
   ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -413,6 +438,106 @@ class _ReadingScreenState extends State<ReadingScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+
+          // Auto-Scroll Prominent Start / Pause Action Button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: recitation.isPlaying
+                  ? const Color(0xFFFFB300).withValues(alpha: 0.15)
+                  : primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: recitation.isPlaying
+                    ? const Color(0xFFFFB300)
+                    : primary.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      recitation.togglePlayPause();
+                      if (recitation.isPlaying) {
+                        _scrollToVerse(recitation.currentVerseIndex);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            recitation.isPlaying
+                                ? Icons.pause_circle_filled_rounded
+                                : Icons.play_circle_fill_rounded,
+                            color: recitation.isPlaying
+                                ? const Color(0xFFFFB300)
+                                : primary,
+                            size: 26,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  recitation.isPlaying
+                                      ? 'Auto-Scrolling Active'
+                                      : 'Start Auto-Scroll Reading',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: recitation.isPlaying
+                                        ? const Color(0xFFFFB300)
+                                        : primary,
+                                  ),
+                                ),
+                                Text(
+                                  recitation.isPlaying
+                                      ? 'Reading Verse #${recitation.currentVerseIndex + 1} of 43'
+                                      : 'స్వయం చలనం ప్రారంభించండి',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 11,
+                                    color: isDark ? Colors.white60 : Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Speed Chip
+                InkWell(
+                  onTap: () => recitation.cyclePlaybackSpeed(),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: primary.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      '${recitation.playbackSpeed}x',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: primary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 12),
           // Language pills quick selector
           Row(
@@ -571,10 +696,11 @@ class _ReadingScreenState extends State<ReadingScreen> {
           const SizedBox(height: 10),
           Text(
             '॥ इति श्रीहनुमानचालीसा सम्पूर्णा ॥',
-            style: GoogleFonts.rozhaOne(
-              fontSize: 18,
+            style: GoogleFonts.notoSansDevanagari(
+              fontSize: 17,
               fontWeight: FontWeight.bold,
               color: primary,
+              letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 6),

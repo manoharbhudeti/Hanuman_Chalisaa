@@ -70,7 +70,7 @@ class RecitationSheet extends StatelessWidget {
                           color: primary.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.temple_hindu_rounded,
+                        child: Icon(Icons.auto_stories_rounded,
                             color: primary, size: 22),
                       ),
                       const SizedBox(width: 10),
@@ -78,15 +78,15 @@ class RecitationSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'स्वाध्याय एवं स्वतः-स्क्रोल',
-                            style: GoogleFonts.rozhaOne(
-                              fontSize: 18,
+                            'స్వయం చలన పారాయణం',
+                            style: GoogleFonts.notoSansTelugu(
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: primary,
                             ),
                           ),
                           Text(
-                            'Guided Reading & Auto-Scroll • పారాయణం',
+                            'Guided Auto-Scroll Reading • स्वतः-स्क्रोल',
                             style: GoogleFonts.outfit(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -163,14 +163,29 @@ class RecitationSheet extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
+                    // Sanskrit Text (Noto Sans Devanagari)
                     Text(
                       currentVerse?.awadhi ?? '',
-                      style: GoogleFonts.rozhaOne(
-                        fontSize: 16,
-                        height: 1.5,
+                      style: GoogleFonts.notoSansDevanagari(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        height: 1.6,
                         color: isDark
                             ? const Color(0xFFFFF8E7)
                             : const Color(0xFF3E2723),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // Telugu Text
+                    Text(
+                      currentVerse?.telugu ?? '',
+                      style: GoogleFonts.notoSansTelugu(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        height: 1.6,
+                        color: isDark
+                            ? const Color(0xFFFFECB3)
+                            : const Color(0xFF4E342E),
                       ),
                     ),
                   ],
@@ -211,6 +226,14 @@ class RecitationSheet extends StatelessWidget {
                       ),
                     ),
                     Text(
+                      'Pacing: ~${recitation.secondsPerVerse}s / verse',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        color: primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
                       _formatDuration(recitation.duration),
                       style: GoogleFonts.outfit(
                         fontSize: 12,
@@ -223,7 +246,7 @@ class RecitationSheet extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              // Main Playback Controls
+              // Main Auto-Scroll Controls
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -252,7 +275,12 @@ class RecitationSheet extends StatelessWidget {
 
                   // Main Play / Pause Button
                   GestureDetector(
-                    onTap: () => recitation.togglePlayPause(),
+                    onTap: () {
+                      recitation.togglePlayPause();
+                      if (!recitation.isPlaying) {
+                        onJumpToVerse();
+                      }
+                    },
                     child: Container(
                       width: 60,
                       height: 60,
@@ -277,19 +305,13 @@ class RecitationSheet extends StatelessWidget {
                         ],
                       ),
                       child: Center(
-                        child: recitation.isLoading
-                            ? const CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              )
-                            : Icon(
-                                recitation.isPlaying
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                color: Colors.white,
-                                size: 36,
-                              ),
+                        child: Icon(
+                          recitation.isPlaying
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 36,
+                        ),
                       ),
                     ),
                   ),
@@ -311,178 +333,158 @@ class RecitationSheet extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // Options: Playback Speed & Auto-Scroll
+              // Auto-Scroll Reading Speed Selector
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Playback Speed
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Pace / వేగం',
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white70 : Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 6,
-                          children: [0.75, 1.0, 1.25, 1.5].map((speed) {
-                            final isSelected = recitation.playbackSpeed == speed;
-                            return ChoiceChip(
-                              label: Text('${speed}x'),
-                              selected: isSelected,
-                              selectedColor: const Color(0xFFFFB300),
-                              onSelected: (_) =>
-                                  recitation.setPlaybackSpeed(speed),
-                              labelStyle: GoogleFonts.outfit(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: isSelected
-                                    ? Colors.black87
-                                    : (isDark ? Colors.white70 : Colors.black87),
-                              ),
-                              visualDensity: VisualDensity.compact,
-                            );
-                          }).toList(),
-                        ),
-                      ],
+                  Text(
+                    'Auto-Scroll Speed (చదివే వేగం)',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : Colors.black87,
                     ),
                   ),
-
-                  // Repeat Target
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Repeat / ఆవర్తనాలు',
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white70 : Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 6,
-                          children: [1, 3, 7, 11].map((reps) {
-                            final isSelected = recitation.repeatTarget == reps;
-                            return ChoiceChip(
-                              label: Text('${reps}x'),
-                              selected: isSelected,
-                              selectedColor: primary,
-                              onSelected: (_) =>
-                                  recitation.setRepeatTarget(reps),
-                              labelStyle: GoogleFonts.outfit(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: isSelected
-                                    ? Colors.white
-                                    : (isDark ? Colors.white70 : Colors.black87),
-                              ),
-                              visualDensity: VisualDensity.compact,
-                            );
-                          }).toList(),
-                        ),
-                      ],
+                  Text(
+                    '${recitation.playbackSpeed}x (${recitation.secondsPerVerse}s / verse)',
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: primary,
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              Row(
+                children: [0.75, 1.0, 1.25, 1.5].map((speed) {
+                  final isSelected = recitation.playbackSpeed == speed;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: ChoiceChip(
+                        label: Text('${speed}x'),
+                        selected: isSelected,
+                        selectedColor: primary.withValues(alpha: 0.25),
+                        labelStyle: GoogleFonts.outfit(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected
+                              ? primary
+                              : (isDark ? Colors.white70 : Colors.black87),
+                        ),
+                        onSelected: (val) {
+                          if (val) recitation.setPlaybackSpeed(speed);
+                        },
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
 
               const SizedBox(height: 16),
 
-              // Auto-Scroll Toggle Switch
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  'Auto-Scroll with Recitation',
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+              // Repetition Goal Target
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Repetition Goal / ఆవర్తనలు',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
                   ),
-                ),
-                subtitle: Text(
-                  'Automatically scroll reading view to active verse card',
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    color: isDark ? Colors.white54 : Colors.black45,
+                  Text(
+                    'Completed: ${recitation.completedCycles} / ${recitation.repeatTarget}',
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFFFB300),
+                    ),
                   ),
-                ),
-                value: recitation.isAutoScrollEnabled,
-                activeTrackColor: const Color(0xFFFFB300),
-                onChanged: (_) {
-                  recitation.toggleAutoScroll();
-                  if (recitation.isAutoScrollEnabled) {
-                    onJumpToVerse();
-                  }
-                },
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [1, 3, 7, 11].map((target) {
+                  final isSelected = recitation.repeatTarget == target;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: ChoiceChip(
+                        label: Text('$target x'),
+                        selected: isSelected,
+                        selectedColor: const Color(0xFFFFB300).withValues(alpha: 0.25),
+                        labelStyle: GoogleFonts.outfit(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected
+                              ? const Color(0xFFFFB300)
+                              : (isDark ? Colors.white70 : Colors.black87),
+                        ),
+                        onSelected: (val) {
+                          if (val) recitation.setRepeatTarget(target);
+                        },
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-              // Jump Directly to Verse Chips
+              // Jump to Specific Verse Quick Strip
               Text(
-                'Jump to Verse / శీఘ్ర గమనం',
+                'Jump to Verse / శ్లోకం ఎంచుకోండి',
                 style: GoogleFonts.outfit(
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white70 : Colors.black87,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               SizedBox(
-                height: 38,
-                child: ListView.separated(
+                height: 44,
+                child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   itemCount: verses.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 6),
                   itemBuilder: (context, index) {
-                    final v = verses[index];
-                    final isCurrent = index == recitation.currentVerseIndex;
-                    return InkWell(
-                      onTap: () {
-                        recitation.jumpToVerse(index);
-                        onJumpToVerse();
-                      },
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
+                    final isCurrent = index == activeIndex;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ActionChip(
+                        avatar: isCurrent
+                            ? const Icon(Icons.check_rounded,
+                                size: 14, color: Colors.black87)
+                            : null,
+                        label: Text(
+                          index == 0
+                              ? 'Doha 1'
+                              : index == 1
+                                  ? 'Doha 2'
+                                  : index == 42
+                                      ? 'End'
+                                      : '#${index - 1}',
+                        ),
+                        backgroundColor: isCurrent
+                            ? const Color(0xFFFFB300)
+                            : (isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.05)),
+                        labelStyle: GoogleFonts.outfit(
+                          fontSize: 11,
+                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
                           color: isCurrent
-                              ? const Color(0xFFFFB300)
-                              : (isDark
-                                  ? const Color(0xFF2C2538)
-                                  : const Color(0xFFF3ECE0)),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isCurrent
-                                ? const Color(0xFFFFB300)
-                                : (isDark
-                                    ? const Color(0xFF483D59)
-                                    : const Color(0xFFE0D5C1)),
-                          ),
+                              ? Colors.black87
+                              : (isDark ? Colors.white70 : Colors.black87),
                         ),
-                        child: Center(
-                          child: Text(
-                            v.verseNumber == 0 ? 'Doha' : '#${v.verseNumber}',
-                            style: GoogleFonts.outfit(
-                              fontSize: 11,
-                              fontWeight: isCurrent
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: isCurrent
-                                  ? Colors.black87
-                                  : (isDark ? Colors.white70 : Colors.black87),
-                            ),
-                          ),
-                        ),
+                        onPressed: () {
+                          recitation.jumpToVerse(index);
+                          onJumpToVerse();
+                        },
                       ),
                     );
                   },

@@ -15,12 +15,6 @@ class RecitationBottomBar extends StatelessWidget {
     required this.onScrollToActiveVerse,
   });
 
-  String _formatDuration(Duration d) {
-    final minutes = d.inMinutes;
-    final seconds = d.inSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
   void _openRecitationSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -28,7 +22,7 @@ class RecitationBottomBar extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => RecitationSheet(
         verses: verses,
-        onJumpToVerse: () => onScrollToActiveVerse(),
+        onJumpToVerse: onScrollToActiveVerse,
       ),
     );
   }
@@ -43,11 +37,7 @@ class RecitationBottomBar extends StatelessWidget {
     final activeIndex = recitation.currentVerseIndex.clamp(0, verses.length - 1);
     final currentVerse = verses.isNotEmpty ? verses[activeIndex] : null;
 
-    final progressFraction = recitation.duration.inMilliseconds > 0
-        ? (recitation.position.inMilliseconds /
-                recitation.duration.inMilliseconds)
-            .clamp(0.0, 1.0)
-        : 0.0;
+    final progressFraction = recitation.progressFraction;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -79,7 +69,7 @@ class RecitationBottomBar extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Thin top progress bar
+              // Top linear progress bar
               LinearProgressIndicator(
                 value: progressFraction,
                 minHeight: 3.5,
@@ -90,12 +80,17 @@ class RecitationBottomBar extends StatelessWidget {
               ),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   children: [
                     // Play / Pause glowing button
                     GestureDetector(
-                      onTap: () => recitation.togglePlayPause(),
+                      onTap: () {
+                        recitation.togglePlayPause();
+                        if (!recitation.isPlaying) {
+                          onScrollToActiveVerse();
+                        }
+                      },
                       child: Container(
                         width: 44,
                         height: 44,
@@ -120,30 +115,20 @@ class RecitationBottomBar extends StatelessWidget {
                           ],
                         ),
                         child: Center(
-                          child: recitation.isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                                  ),
-                                )
-                              : Icon(
-                                  recitation.isPlaying
-                                      ? Icons.pause_rounded
-                                      : Icons.play_arrow_rounded,
-                                  color: Colors.white,
-                                  size: 26,
-                                ),
+                          child: Icon(
+                            recitation.isPlaying
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 26,
+                          ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
 
-                    // Verse Information & Audio Mode
+                    // Verse Information & Auto-Scroll Status
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,8 +139,8 @@ class RecitationBottomBar extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   currentVerse?.title ?? 'Shree Hanuman Chalisa',
-                                  style: GoogleFonts.rozhaOne(
-                                    fontSize: 14,
+                                  style: GoogleFonts.cinzel(
+                                    fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     color: isDark
                                         ? const Color(0xFFFFE0B2)
@@ -170,15 +155,25 @@ class RecitationBottomBar extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 6, vertical: 1.5),
                                 decoration: BoxDecoration(
-                                  color: primary.withValues(alpha: 0.15),
+                                  color: recitation.isPlaying
+                                      ? const Color(0xFFFFB300).withValues(alpha: 0.2)
+                                      : primary.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: recitation.isPlaying
+                                        ? const Color(0xFFFFB300)
+                                        : primary.withValues(alpha: 0.3),
+                                    width: 0.8,
+                                  ),
                                 ),
                                 child: Text(
-                                  'Auto-Scroll',
+                                  recitation.isPlaying ? 'Auto-Scrolling' : 'Auto-Scroll',
                                   style: GoogleFonts.outfit(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
-                                    color: primary,
+                                    color: recitation.isPlaying
+                                        ? const Color(0xFFFFB300)
+                                        : primary,
                                   ),
                                 ),
                               ),
@@ -188,7 +183,7 @@ class RecitationBottomBar extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                '${_formatDuration(recitation.position)} / ${_formatDuration(recitation.duration)}',
+                                'Verse ${activeIndex + 1} / ${verses.length}',
                                 style: GoogleFonts.outfit(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
@@ -198,7 +193,7 @@ class RecitationBottomBar extends StatelessWidget {
                               if (recitation.repeatTarget > 1) ...[
                                 const SizedBox(width: 6),
                                 Text(
-                                  '• ${recitation.completedCycles + 1}/${recitation.repeatTarget}',
+                                  '• Cycle ${recitation.completedCycles + 1}/${recitation.repeatTarget}',
                                   style: GoogleFonts.outfit(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
@@ -212,31 +207,57 @@ class RecitationBottomBar extends StatelessWidget {
                       ),
                     ),
 
-                    // Auto-scroll indicator & quick actions
-                    IconButton(
-                      icon: Icon(
-                        recitation.isAutoScrollEnabled
-                            ? Icons.navigation_rounded
-                            : Icons.near_me_disabled_rounded,
-                        color: recitation.isAutoScrollEnabled
-                            ? const Color(0xFFFFB300)
-                            : (isDark ? Colors.white38 : Colors.black38),
-                        size: 22,
+                    // Quick Speed Cycle Button (1.0x, 1.25x, etc.)
+                    InkWell(
+                      onTap: () => recitation.cyclePlaybackSpeed(),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: primary.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Text(
+                          '${recitation.playbackSpeed}x',
+                          style: GoogleFonts.outfit(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: primary,
+                          ),
+                        ),
                       ),
-                      tooltip: recitation.isAutoScrollEnabled
-                          ? 'Auto-Scroll Active'
-                          : 'Auto-Scroll Paused',
+                    ),
+
+                    // Previous Verse Button
+                    IconButton(
+                      icon: const Icon(Icons.skip_previous_rounded, size: 22),
+                      tooltip: 'Previous Verse',
+                      color: isDark ? Colors.white70 : Colors.black87,
                       onPressed: () {
-                        recitation.toggleAutoScroll();
-                        if (recitation.isAutoScrollEnabled) {
-                          onScrollToActiveVerse();
-                        }
+                        recitation.previousVerse();
+                        onScrollToActiveVerse();
                       },
                     ),
 
+                    // Next Verse Button
                     IconButton(
-                      icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 24),
-                      tooltip: 'Expand Player',
+                      icon: const Icon(Icons.skip_next_rounded, size: 22),
+                      tooltip: 'Next Verse',
+                      color: isDark ? Colors.white70 : Colors.black87,
+                      onPressed: () {
+                        recitation.nextVerse();
+                        onScrollToActiveVerse();
+                      },
+                    ),
+
+                    // Expand Sheet Button
+                    IconButton(
+                      icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 22),
+                      tooltip: 'Auto-Scroll Settings',
                       color: isDark ? Colors.white70 : Colors.black87,
                       onPressed: () => _openRecitationSheet(context),
                     ),

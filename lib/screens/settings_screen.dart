@@ -25,8 +25,8 @@ class SettingsScreen extends StatelessWidget {
           children: [
             Text(
               'सेटिंग्स एवं सूचना',
-              style: GoogleFonts.rozhaOne(
-                fontSize: 19,
+              style: GoogleFonts.notoSansDevanagari(
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: primary,
               ),
@@ -324,10 +324,11 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   '॥ श्री हनुमान चालीसा ॥',
-                  style: GoogleFonts.rozhaOne(
-                    fontSize: 20,
+                  style: GoogleFonts.notoSansDevanagari(
+                    fontSize: 19,
                     fontWeight: FontWeight.bold,
                     color: primary,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 4),
