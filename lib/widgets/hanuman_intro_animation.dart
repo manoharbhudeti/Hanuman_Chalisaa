@@ -327,7 +327,7 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
 
                   // Floating Pop-up Hero "Begin Sacred Journey" Button (Bottom bar suppressed)
                   Positioned(
-                    bottom: 24,
+                    bottom: 54,
                     left: 20,
                     right: 20,
                     child: Center(
