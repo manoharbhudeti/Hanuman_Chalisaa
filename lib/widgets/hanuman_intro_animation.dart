@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:video_player/video_player.dart';
 
 class HanumanIntroAnimation extends StatefulWidget {
   final VoidCallback onBeginJourney;
@@ -21,416 +22,270 @@ class HanumanIntroAnimation extends StatefulWidget {
 
 class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+  late VideoPlayerController _videoController;
+  bool _isInitialized = false;
+  bool _hasError = false;
+  bool _isMuted = false;
+  bool _isVideoEnded = false;
 
-  // Keyframe phase animations
-  late final Animation<double> _phaseAnimation;
-  late final Animation<double> _mandalaRotation;
-  late final Animation<double> _buttonScale;
-
-  int _currentFrameIndex = 0;
-
-  static const List<String> _frameAssets = [
-    'assets/animation/frame_0_intro.png',
-    'assets/animation/frame_1_leap.png',
-    'assets/animation/frame_2_catch.png',
-    'assets/animation/frame_3_pranam.png',
-  ];
-
-  static const List<String> _phaseTitles = [
-    '0s: Intro & Gada Appears',
-    '1s: Hanuman Leaps & Gada Spins',
-    '2s: Hanuman Catches Gada!',
-    '3s: Final Pose & Begin!',
-  ];
+  late final AnimationController _pulseController;
+  late final Animation<double> _buttonScaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+
+    _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 3600),
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+
+    _buttonScaleAnimation = Tween<double>(begin: 0.98, end: 1.04).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    _phaseAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.linear,
-    );
+    _initVideo();
+  }
 
-    _mandalaRotation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.65, 1.0, curve: Curves.linear),
-      ),
-    );
+  Future<void> _initVideo() async {
+    try {
+      _videoController =
+          VideoPlayerController.asset('assets/videos/hanuman_intro.mp4');
 
-    _buttonScale = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.78, 0.98, curve: Curves.elasticOut),
-      ),
-    );
+      await _videoController.initialize();
+      _videoController.setLooping(false);
+      _videoController.setVolume(1.0);
 
-    _controller.addListener(() {
-      final val = _controller.value;
-      int newIndex;
-      if (val < 0.28) {
-        newIndex = 0; // 0s - 1s
-      } else if (val < 0.58) {
-        newIndex = 1; // 1s - 2s
-      } else if (val < 0.82) {
-        newIndex = 2; // 2s - 3s
-      } else {
-        newIndex = 3; // 3s+
-      }
+      _videoController.addListener(() {
+        if (!mounted) return;
+        final position = _videoController.value.position;
+        final duration = _videoController.value.duration;
 
-      if (newIndex != _currentFrameIndex) {
-        if (newIndex == 2) {
-          HapticFeedback.mediumImpact(); // Catch impact!
-        } else if (newIndex == 3) {
-          HapticFeedback.lightImpact(); // Pranam landing
+        if (duration > Duration.zero && position >= duration) {
+          if (!_isVideoEnded) {
+            setState(() {
+              _isVideoEnded = true;
+            });
+          }
+        } else if (_isVideoEnded && position < duration) {
+          setState(() {
+            _isVideoEnded = false;
+          });
         }
+      });
+
+      await _videoController.play();
+
+      if (mounted) {
         setState(() {
-          _currentFrameIndex = newIndex;
+          _isInitialized = true;
         });
       }
-    });
+    } catch (e) {
+      debugPrint('Error initializing intro video: $e');
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+        });
+      }
+    }
+  }
 
-    _controller.forward();
+  void _togglePlayPause() {
+    if (!_isInitialized) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      if (_videoController.value.isPlaying) {
+        _videoController.pause();
+      } else {
+        if (_isVideoEnded) {
+          _videoController.seekTo(Duration.zero);
+          _videoController.play();
+          _isVideoEnded = false;
+        } else {
+          _videoController.play();
+        }
+      }
+    });
+  }
+
+  void _replayVideo() {
+    if (!_isInitialized) return;
+    HapticFeedback.lightImpact();
+    _videoController.seekTo(Duration.zero);
+    _videoController.play();
+    setState(() {
+      _isVideoEnded = false;
+    });
+  }
+
+  void _toggleMute() {
+    if (!_isInitialized) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      _isMuted = !_isMuted;
+      _videoController.setVolume(_isMuted ? 0.0 : 1.0);
+    });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _pulseController.dispose();
+    if (_isInitialized) {
+      _videoController.dispose();
+    }
     super.dispose();
-  }
-
-  void _replay() {
-    HapticFeedback.selectionClick();
-    _controller.reset();
-    _controller.forward();
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final cardWidth = math.min(size.width * 0.88, 380.0);
-    final cardHeight = cardWidth * 1.95; // Golden portrait ratio
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.primaryColor;
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final progress = _phaseAnimation.value;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = constraints.maxWidth;
+        final screenHeight = constraints.maxHeight;
 
-        // Micro squish-and-stretch bounces per phase
-        double scaleY = 1.0;
-        double scaleX = 1.0;
-        double offsetY = 0.0;
+        // Dynamic responsive sizing across phones, tablets, and widescreen desktop
+        final isWideScreen = screenWidth > 600;
+        final maxCardWidth = isWideScreen ? 450.0 : screenWidth * 0.94;
+        final maxCardHeight = math.min(screenHeight * 0.94, 820.0);
 
-        if (_currentFrameIndex == 0) {
-          // Subtle peek bobbing
-          offsetY = math.sin(progress * 16) * 4.0;
-        } else if (_currentFrameIndex == 1) {
-          // Dynamic upward stretch
-          final leapProg = ((progress - 0.28) / 0.30).clamp(0.0, 1.0);
-          scaleY = 1.0 + 0.08 * math.sin(leapProg * math.pi);
-          scaleX = 1.0 - 0.04 * math.sin(leapProg * math.pi);
-          offsetY = -12.0 * math.sin(leapProg * math.pi);
-        } else if (_currentFrameIndex == 2) {
-          // Impact pop squash
-          final catchProg = ((progress - 0.58) / 0.24).clamp(0.0, 1.0);
-          final pop = math.sin(catchProg * math.pi);
-          scaleY = 1.0 + 0.12 * pop;
-          scaleX = 1.0 + 0.12 * pop;
-        } else {
-          // Settling pranam breath
-          final settleProg = ((progress - 0.82) / 0.18).clamp(0.0, 1.0);
-          scaleY = 1.0 + 0.02 * math.sin(settleProg * 4 * math.pi);
-        }
+        final videoAspect = _isInitialized && _videoController.value.aspectRatio > 0
+            ? _videoController.value.aspectRatio
+            : (9.0 / 16.0);
 
-        return Container(
-          color: const Color(0xFF19161B),
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        return Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: maxCardWidth,
+              maxHeight: maxCardHeight,
+            ),
+            child: Container(
+              margin: EdgeInsets.symmetric(
+                horizontal: isWideScreen ? 16 : 8,
+                vertical: isWideScreen ? 16 : 8,
+              ),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF14101A) : const Color(0xFFFFFDF8),
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(
+                  color: const Color(0xFFFFB300).withValues(alpha: 0.45),
+                  width: 1.8,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF8F00).withValues(alpha: isDark ? 0.35 : 0.22),
+                    blurRadius: 28,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
                 children: [
-                  // Top Controls Bar (Timeline progress + Close / Replay)
-                  SizedBox(
-                    width: cardWidth,
+                  // Video & Backdrop Viewport
+                  Positioned.fill(
+                    child: Column(
+                      children: [
+                        // Main Video Display Area
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: _togglePlayPause,
+                            behavior: HitTestBehavior.opaque,
+                            child: Container(
+                              color: Colors.black,
+                              alignment: Alignment.center,
+                              child: _buildVideoContent(videoAspect, primaryColor),
+                            ),
+                          ),
+                        ),
+
+                        // Bottom Actions Area matching the video aesthetic
+                        _buildBottomActionPanel(primaryColor, isDark),
+                      ],
+                    ),
+                  ),
+
+                  // Top Header Overlay: Title & Controls
+                  Positioned(
+                    top: 12,
+                    left: 14,
+                    right: 14,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Phase badge
+                        // Spiritual Aura Badge
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                              horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFF6D00).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.black.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: const Color(0xFFFF9100).withValues(alpha: 0.6),
+                              color: const Color(0xFFFFB300).withValues(alpha: 0.5),
+                              width: 1.0,
                             ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.movie_creation_rounded,
-                                  color: Color(0xFFFFB300), size: 14),
-                              const SizedBox(width: 6),
+                              const Icon(Icons.stars_rounded,
+                                  size: 15, color: Color(0xFFFFB300)),
+                              const SizedBox(width: 5),
                               Text(
-                                _phaseTitles[_currentFrameIndex],
-                                style: GoogleFonts.outfit(
+                                'श्री हनुमान चालीसा',
+                                style: GoogleFonts.notoSansDevanagari(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFFFD54F),
+                                  color: const Color(0xFFFFE082),
                                 ),
                               ),
                             ],
                           ),
                         ),
 
+                        // Quick Controls: Mute & Close
                         Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.replay_rounded,
-                                  color: Colors.white70, size: 20),
-                              tooltip: 'Replay Animation',
-                              onPressed: _replay,
-                            ),
-                            if (widget.showCloseButton)
+                            if (_isInitialized)
+                              IconButton(
+                                icon: Icon(
+                                  _isMuted
+                                      ? Icons.volume_off_rounded
+                                      : Icons.volume_up_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      Colors.black.withValues(alpha: 0.6),
+                                  padding: const EdgeInsets.all(8),
+                                ),
+                                tooltip: _isMuted ? 'Unmute' : 'Mute',
+                                onPressed: _toggleMute,
+                              ),
+                            if (widget.showCloseButton) ...[
+                              const SizedBox(width: 8),
                               IconButton(
                                 icon: const Icon(Icons.close_rounded,
-                                    color: Colors.white70, size: 20),
-                                onPressed: widget.onClose,
+                                    color: Colors.white, size: 20),
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      Colors.black.withValues(alpha: 0.6),
+                                  padding: const EdgeInsets.all(8),
+                                ),
+                                tooltip: 'Close',
+                                onPressed: widget.onClose ??
+                                    () => Navigator.of(context).pop(),
                               ),
+                            ],
                           ],
                         ),
                       ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Main Festive Saffron Flashcard
-                  Container(
-                    width: cardWidth,
-                    height: cardHeight,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: const Color(0xFFFF6D00),
-                        width: 4.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF6D00).withValues(alpha: 0.35),
-                          blurRadius: 28,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 8),
-                        ),
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(23.5),
-                      child: Stack(
-                        children: [
-                          // Base Animated Illustration Frame
-                          Positioned.fill(
-                            child: Transform.translate(
-                              offset: Offset(0, offsetY),
-                              child: Transform.scale(
-                                scaleX: scaleX,
-                                scaleY: scaleY,
-                                child: Image.asset(
-                                  _frameAssets[_currentFrameIndex],
-                                  fit: BoxFit.fill,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Dynamic Particle / Energy Ray Overlay Painter
-                          Positioned.fill(
-                            child: CustomPaint(
-                              painter: _AnimationFxPainter(
-                                phaseIndex: _currentFrameIndex,
-                                animationValue: progress,
-                                mandalaAngle: _mandalaRotation.value,
-                              ),
-                            ),
-                          ),
-
-                          // Phase 3: Interactive Begin Journey Button overlay
-                          if (_currentFrameIndex == 3)
-                            Positioned(
-                              left: 20,
-                              right: 20,
-                              bottom: 28,
-                              child: Transform.scale(
-                                scale: _buttonScale.value,
-                                child: Opacity(
-                                  opacity: _buttonScale.value.clamp(0.0, 1.0),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(24),
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFF8B0000),
-                                          Color(0xFFB71C1C),
-                                        ],
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(0xFFFFB300)
-                                              .withValues(alpha: 0.45),
-                                          blurRadius: 14,
-                                          spreadRadius: 1,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
-                                      border: Border.all(
-                                        color: const Color(0xFFFFD54F)
-                                            .withValues(alpha: 0.8),
-                                        width: 1.8,
-                                      ),
-                                    ),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        borderRadius: BorderRadius.circular(24),
-                                        onTap: () {
-                                          HapticFeedback.heavyImpact();
-                                          widget.onBeginJourney();
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 14, horizontal: 16),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              const Icon(
-                                                Icons.auto_stories_rounded,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'Begin Journey',
-                                                style: GoogleFonts.cinzel(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                  letterSpacing: 0.8,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 6),
-                                              const Icon(
-                                                Icons.arrow_forward_rounded,
-                                                color: Color(0xFFFFD54F),
-                                                size: 18,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                          // Decorative Corner Film Camera Marks
-                          Positioned(
-                            top: 8,
-                            left: 8,
-                            child: _buildCameraCorner(),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Transform.rotate(
-                              angle: math.pi / 2,
-                              child: _buildCameraCorner(),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 8,
-                            left: 8,
-                            child: Transform.rotate(
-                              angle: -math.pi / 2,
-                              child: _buildCameraCorner(),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 8,
-                            right: 8,
-                            child: Transform.rotate(
-                              angle: math.pi,
-                              child: _buildCameraCorner(),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // 4-Phase Step Timeline Selector
-                  SizedBox(
-                    width: cardWidth,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(4, (index) {
-                        final isSelected = _currentFrameIndex == index;
-                        final targetTime = [0.0, 0.35, 0.65, 0.95][index];
-
-                        return InkWell(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            _controller.animateTo(targetTime,
-                                duration: const Duration(milliseconds: 300));
-                          },
-                          borderRadius: BorderRadius.circular(10),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color(0xFFFF6D00)
-                                  : Colors.white.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isSelected
-                                    ? const Color(0xFFFFB300)
-                                    : Colors.white12,
-                              ),
-                            ),
-                            child: Text(
-                              '${index}s',
-                              style: GoogleFonts.outfit(
-                                fontSize: 12,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.w500,
-                                color: isSelected ? Colors.white : Colors.white60,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
                     ),
                   ),
                 ],
@@ -442,119 +297,242 @@ class _HanumanIntroAnimationState extends State<HanumanIntroAnimation>
     );
   }
 
-  Widget _buildCameraCorner() {
-    return Container(
-      width: 14,
-      height: 14,
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: Color(0x99FFFFFF), width: 1.8),
-          left: BorderSide(color: Color(0x99FFFFFF), width: 1.8),
+  Widget _buildVideoContent(double videoAspect, Color primaryColor) {
+    if (_hasError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.video_library_rounded,
+                  size: 54, color: Color(0xFFFFB300)),
+              const SizedBox(height: 14),
+              Text(
+                'श्री हनुमान चालीसा',
+                style: GoogleFonts.notoSansDevanagari(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFFFE082),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sacred Journey is Ready',
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+      );
+    }
+
+    if (!_isInitialized) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 38,
+              height: 38,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFB300)),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'लोड हो रहा है • Loading Video...',
+              style: GoogleFonts.outfit(
+                fontSize: 13,
+                color: Colors.white70,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Video Player maintaining natural aspect ratio seamlessly
+        Center(
+          child: AspectRatio(
+            aspectRatio: videoAspect,
+            child: VideoPlayer(_videoController),
+          ),
+        ),
+
+        // Pause/Play overlay indicator when paused
+        if (!_videoController.value.isPlaying && !_isVideoEnded)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.5),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.play_arrow_rounded,
+              color: Colors.white,
+              size: 42,
+            ),
+          ),
+
+        // Video Progress Tracker Bar at Bottom of Video Area
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: VideoProgressIndicator(
+            _videoController,
+            allowScrubbing: true,
+            colors: VideoProgressColors(
+              playedColor: const Color(0xFFFFB300),
+              bufferedColor: Colors.white.withValues(alpha: 0.3),
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 4),
+          ),
+        ),
+      ],
     );
   }
-}
 
-/// Dynamic canvas painter adding animated golden sparkles, impact starbursts, and speed rays
-class _AnimationFxPainter extends CustomPainter {
-  final int phaseIndex;
-  final double animationValue;
-  final double mandalaAngle;
+  Widget _buildBottomActionPanel(Color primaryColor, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1B1624) : const Color(0xFFFFFDF9),
+        border: Border(
+          top: BorderSide(
+            color: const Color(0xFFFFB300).withValues(alpha: 0.25),
+            width: 1.0,
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Subtitle info line
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '॥ संकट कटे मिटे सब पीरा ॥',
+                  style: GoogleFonts.notoSansDevanagari(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFFF9800),
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '• Sacred Recitation',
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    color: isDark ? Colors.white60 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
 
-  _AnimationFxPainter({
-    required this.phaseIndex,
-    required this.animationValue,
-    required this.mandalaAngle,
-  });
+          // Action Buttons: Replay + Prominent "Begin Sacred Journey" Button
+          Row(
+            children: [
+              // Replay button if video ended or playing
+              if (_isInitialized) ...[
+                IconButton.filledTonal(
+                  onPressed: _replayVideo,
+                  icon: const Icon(Icons.replay_rounded, size: 22),
+                  tooltip: 'Replay Video',
+                  style: IconButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFB300).withValues(alpha: 0.15),
+                    foregroundColor: const Color(0xFFFFB300),
+                    padding: const EdgeInsets.all(14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * 0.5, size.height * 0.45);
-
-    if (phaseIndex == 0) {
-      // Phase 0: Tiny glittering gold stars around the top mace
-      final starPaint = Paint()
-        ..color = const Color(0xFFFFD54F)
-        ..style = PaintingStyle.fill;
-
-      final t = animationValue * 10;
-      _drawSparkle(canvas, Offset(size.width * 0.82, size.height * 0.12),
-          4.0 + 2.0 * math.sin(t), starPaint);
-      _drawSparkle(canvas, Offset(size.width * 0.70, size.height * 0.18),
-          3.0 + 1.5 * math.cos(t), starPaint);
-    } else if (phaseIndex == 1) {
-      // Phase 1: Swoop speed lines and golden trail dots
-      final trailPaint = Paint()
-        ..color = const Color(0xFFFFE082).withValues(alpha: 0.6)
-        ..strokeWidth = 2.0
-        ..style = PaintingStyle.stroke;
-
-      // Arc trail
-      final rect = Rect.fromCircle(
-          center: Offset(size.width * 0.65, size.height * 0.35),
-          radius: size.width * 0.38);
-      canvas.drawArc(rect, 0.2, 1.2, false, trailPaint);
-
-      // Motion particles
-      final dotPaint = Paint()
-        ..color = const Color(0xFFFFD54F)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(
-          Offset(size.width * 0.48, size.height * 0.28), 2.5, dotPaint);
-      canvas.drawCircle(
-          Offset(size.width * 0.58, size.height * 0.32), 3.0, dotPaint);
-    } else if (phaseIndex == 2) {
-      // Phase 2: Comic impact starburst & radiating energy rays
-      final rayPaint = Paint()
-        ..color = const Color(0xFFFFD54F).withValues(alpha: 0.25)
-        ..strokeWidth = 2.5
-        ..style = PaintingStyle.stroke;
-
-      const numRays = 8;
-      for (int i = 0; i < numRays; i++) {
-        final angle = (i * 2 * math.pi / numRays) + (animationValue * 2);
-        final inner = Offset(
-          center.dx + math.cos(angle) * 35,
-          center.dy + math.sin(angle) * 35,
-        );
-        final outer = Offset(
-          center.dx + math.cos(angle) * 65,
-          center.dy + math.sin(angle) * 65,
-        );
-        canvas.drawLine(inner, outer, rayPaint);
-      }
-    } else if (phaseIndex == 3) {
-      // Phase 3: Subtle rotating divine aura rings behind Pranam Hanuman
-      final auraPaint = Paint()
-        ..color = const Color(0xFFFFD54F).withValues(alpha: 0.18)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
-
-      canvas.drawCircle(
-          Offset(size.width * 0.5, size.height * 0.44), 68, auraPaint);
-      canvas.drawCircle(
-          Offset(size.width * 0.5, size.height * 0.44), 82, auraPaint);
-    }
-  }
-
-  void _drawSparkle(Canvas canvas, Offset pos, double size, Paint paint) {
-    final path = Path();
-    path.moveTo(pos.dx, pos.dy - size);
-    path.lineTo(pos.dx + size * 0.3, pos.dy - size * 0.3);
-    path.lineTo(pos.dx + size, pos.dy);
-    path.lineTo(pos.dx + size * 0.3, pos.dy + size * 0.3);
-    path.lineTo(pos.dx, pos.dy + size);
-    path.lineTo(pos.dx - size * 0.3, pos.dy + size * 0.3);
-    path.lineTo(pos.dx - size, pos.dy);
-    path.lineTo(pos.dx - size * 0.3, pos.dy - size * 0.3);
-    path.close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _AnimationFxPainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue ||
-        oldDelegate.phaseIndex != phaseIndex;
+              // Main "Begin Journey" Dynamic Button
+              Expanded(
+                child: ScaleTransition(
+                  scale: _isVideoEnded ? _buttonScaleAnimation : const AlwaysStoppedAnimation(1.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFFFF8F00),
+                          Color(0xFFFF5722),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF6F00).withValues(alpha: 0.4),
+                          blurRadius: 14,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        HapticFeedback.heavyImpact();
+                        widget.onBeginJourney();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Begin Sacred Journey',
+                              style: GoogleFonts.cinzel(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.4,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.arrow_forward_rounded,
+                                size: 20, color: Colors.white),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

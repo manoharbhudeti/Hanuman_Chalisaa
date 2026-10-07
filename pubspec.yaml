@@ -37,6 +37,7 @@ dependencies:
   provider: ^6.1.5+1
   shared_preferences: ^2.5.6
   google_fonts: ^9.0.0
+  video_player: ^2.14.1
 
 dev_dependencies:
   flutter_test:
@@ -64,7 +65,7 @@ flutter:
   assets:
     - assets/data/hanuman_chalisa.json
     - assets/images/app_logo.png
-    - assets/animation/
+    - assets/videos/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
