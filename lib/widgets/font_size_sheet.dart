@@ -323,7 +323,7 @@ class FontSizeSheet extends StatelessWidget {
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                'Developer : manohar bhudeti',
+                                'Developer : Manohar Bhudeti',
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,

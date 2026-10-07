@@ -447,7 +447,7 @@ class SettingsScreen extends StatelessWidget {
                                 children: [
                                   Flexible(
                                     child: Text(
-                                      'developer : manohar bhudeti',
+                                      'Manohar Bhudeti',
                                       style: GoogleFonts.outfit(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
